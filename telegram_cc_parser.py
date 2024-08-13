@@ -39,28 +39,27 @@ def process_message(message):
 
         for text in content:
             if isinstance(text, dict):
-                if text["type"] == "bold" or text["type"] == "plain":
-                    if keyword in text["text"].lower():
-                        for i in content:
-                            if isinstance(i, dict):
-                                if i["type"] == "code":
-                                    ccs = i["text"]
-                                    ccs = ccs.split("\n")
-                                    for cc in ccs:
-                                        cc = cc.split("|")
-                                        cc_number = cc[0]
-                                        exp = ("" + cc[1] + "/" + cc[2])
-                                        cvv = cc[3]
-                                        return {
-                                                "from-channel-name": from_chat,
-                                                "from-channel-id": from_id.removeprefix('channel'),
-                                                "message-id": message_id,
-                                                "timestamp": timestamp,
-                                                "bin": cc_number[:6], 
-                                                "cc-number": cc_number,
-                                                "expiration": exp,
-                                                "cvv": cvv
-                                                }
+                if keyword in text["text"].lower():
+                    for i in content:
+                        if isinstance(i, dict):
+                            if i["type"] == "code":
+                                ccs = i["text"]
+                                ccs = ccs.split("\n")
+                                for cc in ccs:
+                                    cc = cc.split("|")
+                                    cc_number = cc[0]
+                                    exp = ("" + cc[1] + "/" + cc[2])
+                                    cvv = cc[3]
+                                    return {
+                                            "from-channel-name": from_chat,
+                                            "from-channel-id": from_id.removeprefix('channel'),
+                                            "message-id": message_id,
+                                            "timestamp": timestamp,
+                                            "bin": cc_number[:6], 
+                                            "cc-number": cc_number,
+                                            "expiration": exp,
+                                            "cvv": cvv
+                                            }
         
     return None
 
