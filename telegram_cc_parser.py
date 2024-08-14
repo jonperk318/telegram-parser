@@ -8,11 +8,17 @@ This script takes in a JSON file exported from Telegram chat history and finds c
 in posts with keyword mentions. This is to be used to search dumps for sensitive data so the victims
 can be made aware of the breach and the cards can be canceled. This is ONLY created to PREVENT 
 further exploitation.
-"""
 
+Accepted cc formats:
+0000000000000000|MM|YY|000
+0000000000000000|MM|YY|0000
+0000000000000000|MM|YYYY|000
+0000000000000000|MM|YYYY|0000
+"""
 
 import json
 import csv
+import re
 
 file = input("Enter name of JSON file (excluding extension):\n")
 
@@ -32,38 +38,36 @@ def process_message(message):
     
     message_id = str(message["id"])
     timestamp = message["date"].split("T")
-    date = timestamp[0]
+    date = timestamp[0].replace("-", "/")
     time = timestamp[1]
     from_chat = message["from"]
     from_id = message["from_id"]
     content = message.get("text", "")
+    cc_regex = re.compile(r"(\d{16}\|\d{2}\|(\d{2}|\d{4})\|(\d{3}|\d{4}))")
 
     if isinstance(content, list):
-
         for text in content:
             if isinstance(text, dict):
                 if keyword in text["text"].lower():
                     for i in content:
                         if isinstance(i, dict):
-                            if i["type"] == "code":
-                                ccs = i["text"]
-                                ccs = ccs.split("\n")
-                                for cc in ccs:
-                                    cc = cc.split("|")
-                                    cc_number = cc[0]
-                                    exp = ("" + cc[1] + "/" + cc[2])
-                                    cvv = cc[3]
-                                    return {
-                                            "from-channel-name": from_chat,
-                                            "from-channel-id": from_id.removeprefix('channel'),
-                                            "message-id": message_id,
-                                            "date": date,
-                                            "time": time,
-                                            "bin": cc_number[:6], 
-                                            "cc-number": cc_number,
-                                            "expiration": exp,
-                                            "cvv": cvv
-                                            }
+                            ccs = re.findall(cc_regex, i["text"])
+                            for cc in ccs:
+                                cc = cc[0].split("|")
+                                cc_number = cc[0]
+                                exp = (cc[1] + "/" + cc[2])
+                                cvv = cc[3]
+                                return {
+                                        "from-channel-name": from_chat,
+                                        "from-channel-id": from_id.removeprefix('channel'),
+                                        "message-id": message_id,
+                                        "date": date,
+                                        "time": time,
+                                        "bin": cc_number[:6], 
+                                        "cc-number": cc_number,
+                                        "expiration": exp,
+                                        "cvv": cvv
+                                        }
         
     return None
 
