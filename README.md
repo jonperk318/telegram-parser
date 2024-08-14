@@ -25,7 +25,8 @@ python3 telegram-cc-parser.py result.json [keyword]
 - `from-channel-name`: channel name post originated from
 - `from-channel-id`: channel ID
 - `message-id`: unique message ID (to find exact message by appending to Telegram chat URL)
-- `timestamp`: MM/DD/YYYY 00:00
+- `date`: MM/DD/YYYY
+- `time`: 00:00:00
 - `bin`: first 6 digits of card number
 - `cc-number`: card number
 - `expiration`: expiration date

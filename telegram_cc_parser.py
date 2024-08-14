@@ -23,6 +23,7 @@ f.close()
 channel_id = str(data["id"])
 
 keyword = input("Enter search keyword (bank/institution name, etc.) (case insensitive):\n")
+keyword = keyword.lower()
 
 def process_message(message):
 
@@ -30,7 +31,9 @@ def process_message(message):
         return None
     
     message_id = str(message["id"])
-    timestamp = message["date"].replace("T", " ")
+    timestamp = message["date"].split("T")
+    date = timestamp[0]
+    time = timestamp[1]
     from_chat = message["from"]
     from_id = message["from_id"]
     content = message.get("text", "")
@@ -54,7 +57,8 @@ def process_message(message):
                                             "from-channel-name": from_chat,
                                             "from-channel-id": from_id.removeprefix('channel'),
                                             "message-id": message_id,
-                                            "timestamp": timestamp,
+                                            "date": date,
+                                            "time": time,
                                             "bin": cc_number[:6], 
                                             "cc-number": cc_number,
                                             "expiration": exp,
@@ -70,7 +74,8 @@ with open("./" + keyword + " - " + channel_id + ".csv", "w", encoding="utf-8-sig
                                         "from-channel-name",
                                         "from-channel-id",
                                         "message-id",
-                                        "timestamp",
+                                        "date",
+                                        "time",
                                         "bin",
                                         "cc-number",
                                         "expiration",
