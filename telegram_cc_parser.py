@@ -14,6 +14,7 @@ Accepted cc formats:
 0000000000000000|MM|YY|0000
 0000000000000000|MM|YYYY|000
 0000000000000000|MM|YYYY|0000
+The | can also be a :
 """
 
 import json
@@ -42,8 +43,8 @@ def process_message(message):
     time = timestamp[1]
     from_chat = message["from"]
     from_id = message["from_id"]
-    content = message.get("text", "")
-    cc_regex = re.compile(r"(\d{16}\|\d{2}\|(\d{2}|\d{4})\|(\d{3}|\d{4}))")
+    content = message.get("text_entities", "")
+    cc_regex = re.compile(r"(\d{16}(\||\:)\d{2}(\||\:)(\d{2}|\d{4})(\||\:)(\d{3}|\d{4}))")
 
     if isinstance(content, list):
         for text in content:
@@ -53,7 +54,7 @@ def process_message(message):
                         if isinstance(i, dict):
                             ccs = re.findall(cc_regex, i["text"])
                             for cc in ccs:
-                                cc = cc[0].split("|")
+                                cc = re.split(r"[|:]+", cc[0])
                                 cc_number = cc[0]
                                 exp = (cc[1] + "/" + cc[2])
                                 cvv = cc[3]
