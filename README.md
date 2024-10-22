@@ -1,6 +1,8 @@
-# Telegram Chat CC Parser
+# Telegram Chat CC Parser 2.0
 
-This script takes in a JSON file exported from Telegram chat history and finds credit/debit card information 
+## Now able to scrape directories for JSON files
+
+This script takes in JSON files exported from Telegram chat history and finds credit/debit card information 
 in posts with keyword mentions. This is to be used to search dumps for sensitive data so the victims
 can be made aware of the breach and the cards can be canceled. This is ONLY created to PREVENT 
 further exploitation.
@@ -10,21 +12,22 @@ Accepted cc formats:\
 0000000000000000|MM|YY|0000\
 0000000000000000|MM|YYYY|000\
 0000000000000000|MM|YYYY|0000
+The | can also be a :
 
 ## How to use
 
-This script is written Python 3.12.0.
+This script is written in Python 3.12.0.
 
 1. Find a Telegram channel with credit/debit card dumps in a format shown above.
-2. Export chat history as a JSON (machine readable) format by navigating to the top right menu of the Telegram desktop app. Deselect all boxes and change `html` to `json`.
+2. Export chat history as a JSON (machine readable) format by navigating to the top right menu of the Telegram desktop app. Deselect all boxes and change `HTML` to `JSON`. Export as many 
 
 ![demo.png](demo.png)
 
-3. Download `telegram-cc-parser.py` and place the script in the same directory as the `result.json` file from the Telegram chat export.
+3. Download `telegram-cc-parser.py`.
 4. Run the following command from terminal:
 
 ```python
-python3 telegram_cc_parser.py result [keyword]
+python3 telegram_cc_parser.py [file_or_directory_path] [keyword]
 ```
 5. After a short time, the results will be exported to a `csv` file with the following format:
 
@@ -37,6 +40,7 @@ python3 telegram_cc_parser.py result [keyword]
 - `cc-number`: card number
 - `expiration`: expiration date
 - `cvv`: pin
+- `link`: link to message
 
 ## Notes
 

@@ -9,6 +9,11 @@ in posts with keyword mentions. This is to be used to search dumps for sensitive
 can be made aware of the breach and the cards can be canceled. This is ONLY created to PREVENT 
 further exploitation.
 
+Enter either a path to a single JSON file to parse OR a directory. If a file is input, the results will be 
+output into a CSV file named using the chat ID. If a directory is input, the directory will be recursively 
+searched for any JSON files and the results from all channels will be output into a single CSV. The results
+will be output into a parser_output directory within the working directory.
+
 Accepted cc formats:
 0000000000000000|MM|YY|000
 0000000000000000|MM|YY|0000
@@ -24,14 +29,14 @@ import json
 import csv
 import re
 
-
-path = input("Enter path of directory to recursively search for JSON files OR a specific file:\n")
-path += "./"
-output_path = path + "/parser_output/"
+# Input path and keyword from user
+path = Path(input("\nEnter path of directory to recursively search for JSON files OR a specific file:\n").strip('"'))
+if not path:
+    path = Path("./")
 keyword = input("Enter search keyword (bank/institution name, etc.) (case insensitive):\n")
 keyword = keyword.lower()
 
-
+# Parse individual message for CC data (can create a single row in output CSV)
 def process_message(message):
 
     if message["type"] != "message":
@@ -73,7 +78,7 @@ def process_message(message):
         
     return None
 
-
+# Create filewriter object for CSV
 def file_writer(output_file):
     return csv.DictWriter(output_file, [
                                         "from-channel-name",
@@ -89,48 +94,47 @@ def file_writer(output_file):
                                           ], dialect="unix", quoting=csv.QUOTE_NONNUMERIC)
 
 
-if os.path.isdir(path): # DIRECTORY
+if os.path.isdir(path): # DIRECTORY INPUT
 
-    # Search recursively for all CSV files in directory
-    files = []
-    for subpath in Path(path).rglob('*.json'):
-        files.append(subpath.name)
+    output_path = Path.joinpath(path, "parser_output")
+    if not output_path.exists(): # Create output directory if it doesn't exist
+        output_path.mkdir(parents=True, exist_ok=True)
 
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
-
-    with open(output_path + keyword + ".csv", "w", encoding="utf-8-sig", newline="") as output_file:
+    with open(str(output_path) + "/" + keyword + ".csv", 
+              "w", encoding="utf-8-sig", newline="") as output_file:
 
         writer = file_writer(output_file)
         writer.writeheader()
 
-        for file in files:
+        for file in Path(path).rglob('*.json'): # Search recursively for all CSV files in directory
 
             f = open((file), encoding="utf8")
             data = json.loads(f.read())
             f.close()
 
-            for message in data["messages"]:
+            for message in data["messages"]: # Each message is checked
                 row = process_message(message)
                 if row is not None:
                     writer.writerow(row)
 
-elif os.path.isfile(path): #FILE
+elif os.path.isfile(path): #FILE INPUT
 
-    if not os.path.exists("./parser_output/"):
-        os.mkdir("./parser_output/")
+    output_path = Path.joinpath(path.parent, "parser_output")
+    if not output_path.exists(): # Create output directory if it doesn't exist
+        output_path.mkdir(parents=True, exist_ok=True)
 
-    f = open((path), encoding="utf8")
+    f = open((str(path)), encoding="utf8")
     data = json.loads(f.read())
     f.close()
     channel_id = str(data["id"])
 
-    with open("./parser_output/" + keyword + " - " + channel_id + ".csv", "w", encoding="utf-8-sig", newline="") as output_file:
+    with open(str(output_path) + "/" + keyword + " - " + channel_id + ".csv", 
+              "w", encoding="utf-8-sig", newline="") as output_file:
 
         writer = file_writer(output_file)
         writer.writeheader()
 
-        for message in data["messages"]:
+        for message in data["messages"]: # Each message is checked
             row = process_message(message)
             if row is not None:
                 writer.writerow(row)
@@ -139,4 +143,4 @@ else:
     sys.exit("Please enter a valid file path or directory")
     
 
-print("Finished")
+print("Finished\n")
