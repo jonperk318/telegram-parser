@@ -19,6 +19,10 @@ Accepted cc formats:
 0000000000000000|MM|YY|0000
 0000000000000000|MM|YYYY|000
 0000000000000000|MM|YYYY|0000
+0000000000000000|MM/YY|000
+0000000000000000|MM/YY|0000
+0000000000000000|MM/YYYY|000
+0000000000000000|MM/YYYY|0000
 The | can also be a :
 """
 
@@ -49,7 +53,7 @@ def process_message(message):
     chat_name = message["from"]
     chat_id = message["from_id"].removeprefix('channel')
     content = message.get("text_entities", "")
-    cc_regex = re.compile(r"(\d{16}(\||\:)\d{2}(\||\:)(\d{2}|\d{4})(\||\:)(\d{3}|\d{4}))")
+    cc_regex = re.compile(r"(\d{16}(\||\:)\d{2}(\||\:|\/)(\d{2}|\d{4})(\||\:)(\d{3}|\d{4}))")
 
     if isinstance(content, list):
         for text in content:
@@ -59,7 +63,7 @@ def process_message(message):
                         if isinstance(i, dict):
                             ccs = re.findall(cc_regex, i["text"])
                             for cc in ccs:
-                                cc = re.split(r"[|:]+", cc[0])
+                                cc = re.split(r"[|:/]+", cc[0])
                                 cc_number = cc[0]
                                 exp = (cc[1] + "/" + cc[2])
                                 cvv = cc[3]
