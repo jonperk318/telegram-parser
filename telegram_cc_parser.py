@@ -5,7 +5,7 @@ OSINT tool by Jonathan Perkins
 contact at jonperk318@gmail.com for questions/bugs
 
 This script takes in JSON files exported from Telegram chat history and finds credit/debit card information 
-in posts with keyword mentions. This is to be used to search dumps for sensitive data so the victims
+in posts using keyword matches. This is to be used to search dumps for sensitive data so the victims
 can be made aware of the breach and the cards can be canceled. This is ONLY created to PREVENT 
 further exploitation.
 
@@ -68,34 +68,34 @@ def process_message(message):
                                 exp = (cc[1] + "/" + cc[2])
                                 cvv = cc[3]
                                 return {
-                                        "from-channel-name": chat_name,
-                                        "from-channel-id": chat_id,
-                                        "message-id": message_id,
-                                        "date": date,
-                                        "time": time,
-                                        "bin": cc_number[:6], 
-                                        "cc-number": cc_number,
-                                        "expiration": exp,
-                                        "cvv": cvv,
-                                        "link": ("https://t.me/c/" + chat_id + "/" + message_id)
-                                        }
+                                    "from-channel-name": chat_name,
+                                    "from-channel-id": chat_id,
+                                    "message-id": message_id,
+                                    "date": date,
+                                    "time": time,
+                                    "bin": cc_number[:6], 
+                                    "cc-number": cc_number,
+                                    "expiration": exp,
+                                    "cvv": cvv,
+                                    "link": ("https://t.me/c/" + chat_id + "/" + message_id)
+                                    }
         
     return None
 
 # Create filewriter object for CSV
 def file_writer(output_file):
     return csv.DictWriter(output_file, [
-                                        "from-channel-name",
-                                        "from-channel-id",
-                                        "message-id",
-                                        "date",
-                                        "time",
-                                        "bin",
-                                        "cc-number",
-                                        "expiration",
-                                        "cvv",
-                                        "link"
-                                          ], dialect="unix", quoting=csv.QUOTE_NONNUMERIC)
+        "from-channel-name",
+        "from-channel-id",
+        "message-id",
+        "date",
+        "time",
+        "bin",
+        "cc-number",
+        "expiration",
+        "cvv",
+        "link"
+        ], dialect="unix", quoting=csv.QUOTE_NONNUMERIC)
 
 
 if os.path.isdir(path): # DIRECTORY INPUT
@@ -110,7 +110,7 @@ if os.path.isdir(path): # DIRECTORY INPUT
         writer = file_writer(output_file)
         writer.writeheader()
 
-        for file in Path(path).rglob('*.json'): # Search recursively for all CSV files in directory
+        for file in Path(path).rglob('*.json'): # Search recursively for all JSON files in directory
 
             f = open((file), encoding="utf8")
             data = json.loads(f.read())
