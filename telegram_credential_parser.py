@@ -32,17 +32,30 @@ def process_line(line):
         if "mercadoli" in line:
             return None
         
-        line = line.split(":")
-
-        if line[0] == "HPID":
+        if line[:4] == "HPID":
             return None
+        
+        if line[:4] == "http":
+        
+            line = line.split(":")
 
-        try: url = line[1].replace("//", "")
-        except: url = ""
-        try: username = line[2]
-        except: username = ""
-        try: password = line[3]
-        except: password = ""
+            try: url = line[1].replace("//", "")
+            except: url = ""
+            try: username = line[2]
+            except: username = ""
+            try: password = line[3]
+            except: password = ""
+
+        else:
+
+            line = line.split(":")
+
+            try: url = line[0]
+            except: url = ""
+            try: username = line[1]
+            except: username = ""
+            try: password = line[2]
+            except: password = ""
 
         return {
             "URL": url,

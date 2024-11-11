@@ -47,3 +47,14 @@ python3 telegram_cc_parser.py [file_or_directory_path] [keyword]
 Please use responsibly! This is an open-source intelligence (OSINT) tool, and as any of these tools, it should be used to counteract criminal activity and protect victim data.
 
 I originally created this for a more narrow use case and didn't intend to share it, but I realized its potential to help a researcher/analyst that stumbles accross it. If you have any suggestions on further features, or if you encounter bugs, please open an issue. Also feel free to contact me directly!
+
+
+
+# Telegram Credential Parser
+
+This tool takes in TXT files downloaded from Telegram and parses out credentials using keyword matches. 
+This is to be used to search dumps for sensitive data so the victims can be made aware of the breach 
+and the credentials can be deactivated. This is ONLY created to PREVENT further exploitation.
+
+Enter the path to a directory of TXT files downloaded from the target Telegram channel. The results will
+be output into a CSV file titled "credentials."
