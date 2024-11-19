@@ -29,33 +29,15 @@ def process_line(line):
 
     if keyword in line.lower():
 
-        if "mercadoli" in line:
+        line, url = if_line(line)
+
+        if line == None:
             return None
-        
-        if line[:4] == "HPID":
-            return None
-        
-        if line[:4] == "http":
-        
-            line = line.split(":")
 
-            try: url = line[1].replace("//", "")
-            except: url = ""
-            try: username = line[2]
-            except: username = ""
-            try: password = line[3]
-            except: password = ""
-
-        else:
-
-            line = line.split(":")
-
-            try: url = line[0]
-            except: url = ""
-            try: username = line[1]
-            except: username = ""
-            try: password = line[2]
-            except: password = ""
+        try: username = line[1]
+        except: username = ""
+        try: password = line[2]
+        except: password = ""
 
         return {
             "URL": url,
@@ -64,6 +46,35 @@ def process_line(line):
             }
         
     return None
+
+def if_line(line): # all if-else statements to catch edge cases
+
+    if "mercadoli" in line:
+        return None, None
+        
+    if line[:4] == "HPID":
+        return None, None
+    
+    if line[:4] == "http":
+    
+        line = line.replace(" ", ":").split(":")[1:]
+        try: url = line[0].replace("//", "")
+        except: url = ""
+        return line, url
+
+    if "|" in line:
+
+        line = line.replace(" ", "|").split("|")
+        try: url = line[0]
+        except: url = ""
+        return line, url
+
+    else:
+
+        line = line.replace(" ", ":").split(":")
+        try: url = line[0]
+        except: url = ""
+        return line, url
 
 # Create filewriter object for CSV
 def file_writer(output_file):
