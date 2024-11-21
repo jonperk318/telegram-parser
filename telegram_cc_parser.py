@@ -32,119 +32,108 @@ import sys
 import json
 import csv
 import re
+from typing import Dict, Optional
 
-# Input path and keyword from user
-path = Path(input("\nEnter path of directory to recursively search for JSON files OR a specific file:\n").strip('"'))
-if not path:
-    path = Path("./")
-keyword = input("Enter search keyword (bank/institution name, etc.) (case insensitive):\n")
-keyword = keyword.lower()
-
-# Parse individual message for CC data (can create a single row in output CSV)
-def process_message(message):
-
+def process_message(message: Dict) -> Optional[Dict]:
     if message["type"] != "message":
         return None
     
     message_id = str(message["id"])
     timestamp = message["date"].split("T")
-    date = timestamp[0].replace("-", "/")
-    time = timestamp[1]
+    date, time = timestamp[0].replace("-", "/"), timestamp[1]
     chat_name = message["from"]
     chat_id = message["from_id"].removeprefix('channel')
     content = message.get("text_entities", "")
     cc_regex = re.compile(r"(\d{16}(\||\:)\d{2}(\||\:|\/)(\d{2}|\d{4})(\||\:)(\d{3}|\d{4}))")
 
-    if isinstance(content, list):
-        for text in content:
-            if isinstance(text, dict):
-                if keyword in text["text"].lower():
-                    for i in content:
-                        if isinstance(i, dict):
-                            ccs = re.findall(cc_regex, i["text"])
-                            for cc in ccs:
-                                cc = re.split(r"[|:/]+", cc[0])
-                                cc_number = cc[0]
-                                exp = (cc[1] + "/" + cc[2])
-                                cvv = cc[3]
-                                return {
-                                    "from-channel-name": chat_name,
-                                    "from-channel-id": chat_id,
-                                    "message-id": message_id,
-                                    "date": date,
-                                    "time": time,
-                                    "bin": cc_number[:6], 
-                                    "cc-number": cc_number,
-                                    "expiration": exp,
-                                    "cvv": cvv,
-                                    "link": ("https://t.me/c/" + chat_id + "/" + message_id)
-                                    }
-        
+    if not isinstance(content, list):
+        return None
+
+    for text in content:
+        if not isinstance(text, dict) or keyword not in text["text"].lower():
+            continue
+            
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+                
+            ccs = re.findall(cc_regex, item["text"])
+            for cc in ccs:
+                cc_parts = re.split(r"[|:/]+", cc[0])
+                return {
+                    "from-channel-name": chat_name,
+                    "from-channel-id": chat_id,
+                    "message-id": message_id,
+                    "date": date,
+                    "time": time,
+                    "bin": cc_parts[0][:6],
+                    "cc-number": cc_parts[0],
+                    "expiration": f"{cc_parts[1]}/{cc_parts[2]}",
+                    "cvv": cc_parts[3],
+                    "link": f"https://t.me/c/{chat_id}/{message_id}"
+                }
+    
     return None
 
-# Create filewriter object for CSV
-def file_writer(output_file):
-    return csv.DictWriter(output_file, [
-        "from-channel-name",
-        "from-channel-id",
-        "message-id",
-        "date",
-        "time",
-        "bin",
-        "cc-number",
-        "expiration",
-        "cvv",
-        "link"
-        ], dialect="unix", quoting=csv.QUOTE_NONNUMERIC)
+def get_csv_writer(output_file):
+    fieldnames = [
+        "from-channel-name", "from-channel-id", "message-id", "date",
+        "time", "bin", "cc-number", "expiration", "cvv", "link"
+    ]
+    return csv.DictWriter(
+        output_file,
+        fieldnames=fieldnames,
+        dialect="unix",
+        quoting=csv.QUOTE_NONNUMERIC
+    )
 
-
-if os.path.isdir(path): # DIRECTORY INPUT
-
-    output_path = Path.joinpath(path, "parser_output")
-    if not output_path.exists(): # Create output directory if it doesn't exist
-        output_path.mkdir(parents=True, exist_ok=True)
-
-    with open(str(output_path) + "/" + keyword + ".csv", 
-              "w", encoding="utf-8-sig", newline="") as output_file:
-
-        writer = file_writer(output_file)
-        writer.writeheader()
-
-        for file in Path(path).rglob('*.json'): # Search recursively for all JSON files in directory
-
-            f = open((file), encoding="utf8")
-            data = json.loads(f.read())
-            f.close()
-
-            for message in data["messages"]: # Each message is checked
-                row = process_message(message)
-                if row is not None:
-                    writer.writerow(row)
-
-elif os.path.isfile(path): #FILE INPUT
-
-    output_path = Path.joinpath(path.parent, "parser_output")
-    if not output_path.exists(): # Create output directory if it doesn't exist
-        output_path.mkdir(parents=True, exist_ok=True)
-
-    f = open((str(path)), encoding="utf8")
-    data = json.loads(f.read())
-    f.close()
-    channel_id = str(data["id"])
-
-    with open(str(output_path) + "/" + keyword + " - " + channel_id + ".csv", 
-              "w", encoding="utf-8-sig", newline="") as output_file:
-
-        writer = file_writer(output_file)
-        writer.writeheader()
-
-        for message in data["messages"]: # Each message is checked
-            row = process_message(message)
-            if row is not None:
-                writer.writerow(row)
-
-else:
-    sys.exit("Please enter a valid file path or directory")
+def process_json_file(json_path: Path, writer, keyword: str):
+    with open(json_path, encoding="utf8") as f:
+        data = json.load(f)
     
+    for message in data["messages"]:
+        if row := process_message(message):
+            writer.writerow(row)
+    
+    return data.get("id")
 
-print("Finished\n")
+def setup_output_directory(base_path: Path) -> Path:
+    output_path = base_path / "parser_output"
+    output_path.mkdir(parents=True, exist_ok=True)
+    return output_path
+
+def main():
+    path = Path(input("\nEnter path of directory to recursively search for JSON files OR a specific file:\n").strip('"'))
+    if not path:
+        path = Path("./")
+    
+    global keyword
+    keyword = input("Enter search keyword (bank/institution name, etc.) (case insensitive):\n").lower()
+    
+    output_path = setup_output_directory(path.parent if path.is_file() else path)
+    
+    if path.is_dir():
+        output_file_path = output_path / f"{keyword}.csv"
+        with open(output_file_path, "w", encoding="utf-8-sig", newline="") as output_file:
+            writer = get_csv_writer(output_file)
+            writer.writeheader()
+            
+            for json_file in path.rglob('*.json'):
+                process_json_file(json_file, writer, keyword)
+                
+    elif path.is_file():
+        channel_id = process_json_file(path, None, keyword)
+        output_file_path = output_path / f"{keyword} - {channel_id}.csv"
+        
+        with open(output_file_path, "w", encoding="utf-8-sig", newline="") as output_file:
+            writer = get_csv_writer(output_file)
+            writer.writeheader()
+            process_json_file(path, writer, keyword)
+            
+    else:
+        sys.exit("Please enter a valid file path or directory")
+    
+    print("Finished\n")
+
+if __name__ == "__main__":
+    main()
