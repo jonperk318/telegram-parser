@@ -87,13 +87,14 @@ def get_csv_writer(output_file):
         quoting=csv.QUOTE_NONNUMERIC
     )
 
-def process_json_file(json_path: Path, writer, keyword: str):
+def process_json_file(json_path: Path, writer):
     with open(json_path, encoding="utf8") as f:
         data = json.load(f)
     
-    for message in data["messages"]:
-        if row := process_message(message):
-            writer.writerow(row)
+    if writer is not None:
+        for message in data["messages"]:
+            if row := process_message(message):
+                writer.writerow(row)
     
     return data.get("id")
 
@@ -102,16 +103,10 @@ def setup_output_directory(base_path: Path) -> Path:
     output_path.mkdir(parents=True, exist_ok=True)
     return output_path
 
-def main():
-    path = Path(input("\nEnter path of directory to recursively search for JSON files OR a specific file:\n").strip('"'))
-    if not path:
-        path = Path("./")
-    
-    global keyword
-    keyword = input("Enter search keyword (bank/institution name, etc.) (case insensitive):\n").lower()
-    
+def check_path(path, keyword):
+
     output_path = setup_output_directory(path.parent if path.is_file() else path)
-    
+
     if path.is_dir():
         output_file_path = output_path / f"{keyword}.csv"
         with open(output_file_path, "w", encoding="utf-8-sig", newline="") as output_file:
@@ -119,19 +114,37 @@ def main():
             writer.writeheader()
             
             for json_file in path.rglob('*.json'):
-                process_json_file(json_file, writer, keyword)
+                process_json_file(json_file, writer)
                 
     elif path.is_file():
-        channel_id = process_json_file(path, None, keyword)
+        channel_id = process_json_file(path, None)
         output_file_path = output_path / f"{keyword} - {channel_id}.csv"
         
         with open(output_file_path, "w", encoding="utf-8-sig", newline="") as output_file:
             writer = get_csv_writer(output_file)
             writer.writeheader()
-            process_json_file(path, writer, keyword)
+            process_json_file(path, writer)
             
     else:
         sys.exit("Please enter a valid file path or directory")
+
+def main():
+
+    path = Path(input("\nEnter path of directory to recursively search for JSON files OR a specific file:\n").strip('"'))
+    if not path:
+        path = Path("./")
+    
+    global keyword
+    keyword = input("Enter case insensitive keyword OR a TXT file containing one keyword per line:\n").lower()
+
+    if Path(keyword).is_file():
+        with open(Path(keyword), "r") as keywords:
+            for k in keywords:
+                keyword = k.strip("\n")
+                check_path(path, keyword)
+    else:
+        check_path(path, keyword)
+    
     
     print("Finished\n")
 
