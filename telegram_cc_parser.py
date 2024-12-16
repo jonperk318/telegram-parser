@@ -34,9 +34,10 @@ import csv
 import re
 from typing import Dict, Optional
 
-def process_message(message: Dict) -> Optional[Dict]:
+def process_message(message: Dict, writer) -> Optional[Dict]:
+
     if message["type"] != "message":
-        return None
+        return
     
     message_id = str(message["id"])
     timestamp = message["date"].split("T")
@@ -47,7 +48,7 @@ def process_message(message: Dict) -> Optional[Dict]:
     cc_regex = re.compile(r"(\d{16}(\||\:)\d{2}(\||\:|\/)(\d{2}|\d{4})(\||\:)(\d{3}|\d{4}))")
 
     if not isinstance(content, list):
-        return None
+        return
 
     for text in content:
         if not isinstance(text, dict) or keyword not in text["text"].lower():
@@ -60,7 +61,7 @@ def process_message(message: Dict) -> Optional[Dict]:
             ccs = re.findall(cc_regex, item["text"])
             for cc in ccs:
                 cc_parts = re.split(r"[|:/]+", cc[0])
-                return {
+                writer.writerow({
                     "from-channel-name": chat_name,
                     "from-channel-id": chat_id,
                     "message-id": message_id,
@@ -71,9 +72,9 @@ def process_message(message: Dict) -> Optional[Dict]:
                     "expiration": f"{cc_parts[1]}/{cc_parts[2]}",
                     "cvv": cc_parts[3],
                     "link": f"https://t.me/c/{chat_id}/{message_id}"
-                }
+                })
     
-    return None
+    return
 
 def get_csv_writer(output_file):
     fieldnames = [
@@ -93,8 +94,7 @@ def process_json_file(json_path: Path, writer):
     
     if writer is not None:
         for message in data["messages"]:
-            if row := process_message(message):
-                writer.writerow(row)
+            process_message(message, writer)
     
     return data.get("id")
 
